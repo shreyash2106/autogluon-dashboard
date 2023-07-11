@@ -49,10 +49,10 @@ from autogluon_dashboard.scripts.widget import Widget
 
 # TODO: Remove hardcoded default csv path
 dataset_file = os.environ.get(
-    "PER_DATASET_S3_PATH", "https://dashboard-test-yash.s3.us-west-2.amazonaws.com/dev_data/all_data.csv"
+    "PER_DATASET_S3_PATH", "dev_data/all_data.csv"
 )
 aggregated_file = os.environ.get(
-    "AGG_DATASET_S3_PATH", "https://dashboard-test-yash.s3.us-west-2.amazonaws.com/dev_data/autogluon.csv"
+    "AGG_DATASET_S3_PATH", "dev_data/autogluon.csv"
 )
 per_dataset_df, all_framework_df = get_dataframes(dataset_file, aggregated_file)
 
@@ -163,6 +163,51 @@ pareto_front = ParetoFront(
     PARETO_FRONT_PLOT, all_framework_df, "pareto", x_axis="time_infer_s_rescaled", y_axis="winrate"
 )
 
+import pandas as pd
+import hvplot
+import io
+upload = pn.widgets.FileInput(name='Upload file', height=50)
+select = pn.widgets.Select(options={
+    'Dataset File': dataset_file,
+    'Aggregated File': aggregated_file,
+})
+
+def add_data(event):
+    b = io.BytesIO()
+    upload.save(b)
+    b.seek(0)
+    name = '.'.join(upload.filename.split('.')[:-1])
+    select.options[name] = b
+    select.param.trigger('options')
+    select.value = b
+    
+upload.param.watch(add_data, 'filename')
+
+def explore(csv):
+    df = pd.read_csv(csv)
+    explorer = hvplot.explorer(df)
+    def plot_code(**kwargs):
+        code = f'```python\n{explorer.plot_code()}\n```'
+        return pn.pane.Markdown(code, sizing_mode='stretch_width')
+    return pn.Column(
+        explorer,
+        '**Code**:',
+        pn.bind(plot_code, **explorer.param.objects())
+    )
+
+widgets = pn.Column(
+    "Select an existing dataset or upload one of your own CSV files and start exploring your data.",
+    pn.Row(
+        select,
+        upload,
+    )
+)
+
+output = pn.panel(pn.bind(explore, select))
+
+
+
+
 # Order matters here!
 plots = [
     metrics_plot_all_datasets,
@@ -198,6 +243,8 @@ template = pn.template.FastListTemplate(
         pn.Row(NO_ERROR_CNTS, plots[next(plot_ctr)]),
         pn.Row(FRAMEWORK_BOX_PLOT, yaxis_widget3, plots[next(plot_ctr)]),
         pn.Row(PARETO_FRONT_PLOT, plots[next(plot_ctr)]),
+        pn.Column(widgets, output),
+
     ],
     header_background=APP_HEADER_BACKGROUND,
 )
