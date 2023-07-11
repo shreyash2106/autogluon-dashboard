@@ -5,6 +5,7 @@ import panel as pn
 from autogluon_dashboard.plotting.errored_datasets import ErroredDatasets
 from autogluon_dashboard.plotting.framework_boxplot import FrameworkBoxPlot
 from autogluon_dashboard.plotting.framework_error import FrameworkError
+from autogluon_dashboard.plotting.hvplot_explorer import output, widgets
 from autogluon_dashboard.plotting.interactive_df import InteractiveDataframe
 from autogluon_dashboard.plotting.metrics_all_datasets import MetricsPlotAll
 from autogluon_dashboard.plotting.metrics_per_datasets import MetricsPlotPerDataset
@@ -19,6 +20,7 @@ from autogluon_dashboard.scripts.constants.app_layout_constants import (
     APP_HEADER_BACKGROUND,
     APP_TITLE,
     DOWNLOAD_FILES_TITLE,
+    EXPLORER_TITLE,
     FRAMEWORK_BOX_PLOT,
     NO_ERROR_CNTS,
     NO_RANK_COMP,
@@ -49,12 +51,8 @@ from autogluon_dashboard.scripts.data import get_dataframes
 from autogluon_dashboard.scripts.widget import Widget
 
 # TODO: Remove hardcoded default csv path
-dataset_file = os.environ.get(
-    "PER_DATASET_S3_PATH", "dev_data/all_data.csv"
-)
-aggregated_file = os.environ.get(
-    "AGG_DATASET_S3_PATH", "dev_data/autogluon.csv"
-)
+dataset_file = os.environ.get("PER_DATASET_S3_PATH", "dev_data/all_data.csv")
+aggregated_file = os.environ.get("AGG_DATASET_S3_PATH", "dev_data/autogluon.csv")
 per_dataset_df, all_framework_df = get_dataframes(dataset_file, aggregated_file)
 
 # clean up framework names
@@ -164,50 +162,12 @@ pareto_front = ParetoFront(
     PARETO_FRONT_PLOT, all_framework_df, "pareto", x_axis="time_infer_s_rescaled", y_axis="winrate"
 )
 
-import pandas as pd
-import hvplot
-import io
-upload = pn.widgets.FileInput(name='Upload file', height=50)
-select = pn.widgets.Select(options={
-    'Dataset File': dataset_file,
-    'Aggregated File': aggregated_file,
-})
 
-def add_data(event):
-    b = io.BytesIO()
-    upload.save(b)
-    b.seek(0)
-    name = '.'.join(upload.filename.split('.')[:-1])
-    select.options[name] = b
-    select.param.trigger('options')
-    select.value = b
-    
-upload.param.watch(add_data, 'filename')
-
-def explore(csv):
-    df = pd.read_csv(csv)
-    explorer = hvplot.explorer(df)
-    def plot_code(**kwargs):
-        code = f'```python\n{explorer.plot_code()}\n```'
-        return pn.pane.Markdown(code, sizing_mode='stretch_width')
-    return pn.Column(
-        explorer,
-        '**Code**:',
-        pn.bind(plot_code, **explorer.param.objects())
-    )
-
-widgets = pn.Column(
-    "Select an existing dataset or upload one of your own CSV files and start exploring your data.",
-    pn.Row(
-        select,
-        upload,
-    )
-)
-
-output = pn.panel(pn.bind(explore, select))
-
-
-
+framework_error_list = all_framework_df.sort_values(by="error_count", ascending=False)
+error_tables = [
+    ErroredDatasets(f"{framework} Errored Datasets", per_dataset_df, "table", framework).plot(width=225)
+    for framework in framework_error_list["framework"]
+]
 
 # Order matters here!
 plots = [
@@ -266,8 +226,7 @@ template = pn.template.FastListTemplate(
         ),
         pn.Row(FRAMEWORK_BOX_PLOT, yaxis_widget3, plots[next(plot_ctr)]),
         pn.Row(PARETO_FRONT_PLOT, plots[next(plot_ctr)]),
-        pn.Column(widgets, output),
-
+        pn.Card(pn.Column(widgets, output), title=EXPLORER_TITLE[1:], collapsed=True),
     ],
     header_background=APP_HEADER_BACKGROUND,
 )

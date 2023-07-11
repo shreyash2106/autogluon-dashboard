@@ -30,6 +30,8 @@ class Widget:
             self.create_widget = self._create_downloadwidget
             self.file = file
             self.filename = filename
+        elif widget_type == "upload":
+            self.create_widget = self._create_uploadwidget
 
         self.name = name
         self.value = value
@@ -57,3 +59,6 @@ class Widget:
             icon_size="3em",
             embed=True,
         )
+
+    def _create_uploadwidget(self) -> pn.widgets.FileInput:
+        return pn.widgets.FileInput(name=self.name, height=25)
