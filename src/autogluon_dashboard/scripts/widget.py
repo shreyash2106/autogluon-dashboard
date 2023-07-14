@@ -1,7 +1,5 @@
-from io import StringIO
 from typing import List, Optional, Union
 
-import pandas as pd
 import panel as pn
 
 
@@ -58,7 +56,7 @@ class Widget:
             button_type="success",
             file=self.file,
             icon_size="3em",
-            embed=False,
+            embed=True,
         )
 
     def _create_uploadwidget(self) -> pn.widgets.FileInput:
