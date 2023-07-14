@@ -5,10 +5,14 @@ import hvplot
 import pandas as pd
 import panel as pn
 
+from autogluon_dashboard.scripts.constants.aws_s3_constants import (
+    AGG_FRAMEWORK_DEFAULT_CSV_PATH,
+    PER_DATASET_DEFAULT_CSV_PATH,
+)
 from autogluon_dashboard.scripts.widget import Widget
 
-dataset_file = os.environ.get("PER_DATASET_S3_PATH", "dev_data/all_data.csv")
-aggregated_file = os.environ.get("AGG_DATASET_S3_PATH", "dev_data/autogluon.csv")
+dataset_file = os.environ.get("PER_DATASET_S3_PATH", PER_DATASET_DEFAULT_CSV_PATH)
+aggregated_file = os.environ.get("AGG_DATASET_S3_PATH", AGG_FRAMEWORK_DEFAULT_CSV_PATH)
 upload = Widget("upload", name="Upload file").create_widget()
 select = Widget(
     "select",

@@ -28,6 +28,10 @@ from autogluon_dashboard.scripts.constants.app_layout_constants import (
     PER_DATA_COMP,
     PER_DATASET_IDF,
 )
+from autogluon_dashboard.scripts.constants.aws_s3_constants import (
+    AGG_FRAMEWORK_DEFAULT_CSV_PATH,
+    PER_DATASET_DEFAULT_CSV_PATH,
+)
 from autogluon_dashboard.scripts.constants.plots_constants import (
     AG_RANK_COUNTS_TITLE,
     AGG_FRAMEWORKS_DOWNLOAD_TITLE,
@@ -51,12 +55,8 @@ from autogluon_dashboard.scripts.data import get_dataframes
 from autogluon_dashboard.scripts.widget import Widget
 
 # TODO: Remove hardcoded default csv path
-dataset_file = os.environ.get(
-    "PER_DATASET_S3_PATH", "https://dashboard-test-yash.s3.us-west-2.amazonaws.com/dev_data/all_data.csv"
-)
-aggregated_file = os.environ.get(
-    "AGG_DATASET_S3_PATH", "https://dashboard-test-yash.s3.us-west-2.amazonaws.com/dev_data/autogluon.csv"
-)
+dataset_file = os.environ.get("PER_DATASET_S3_PATH", PER_DATASET_DEFAULT_CSV_PATH)
+aggregated_file = os.environ.get("AGG_DATASET_S3_PATH", AGG_FRAMEWORK_DEFAULT_CSV_PATH)
 per_dataset_df, all_framework_df = get_dataframes(dataset_file, aggregated_file)
 
 # clean up framework names
