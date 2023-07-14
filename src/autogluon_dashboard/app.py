@@ -231,7 +231,7 @@ template = pn.template.FastListTemplate(
         ),
         pn.Row(FRAMEWORK_BOX_PLOT, yaxis_widget3, plots[next(plot_ctr)]),
         pn.Row(PARETO_FRONT_PLOT, plots[next(plot_ctr)]),
-        pn.Card(pn.Column(widgets, output), title=EXPLORER_TITLE[1:], collapsed=True),
+        pn.Column(pn.Column(widgets, output), title=EXPLORER_TITLE[1:]),
     ],
     header_background=APP_HEADER_BACKGROUND,
 )
