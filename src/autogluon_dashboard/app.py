@@ -32,6 +32,14 @@ from autogluon_dashboard.scripts.constants.aws_s3_constants import (
     AGG_FRAMEWORK_DEFAULT_CSV_PATH,
     PER_DATASET_DEFAULT_CSV_PATH,
 )
+from autogluon_dashboard.scripts.constants.df_constants import (
+    DATASET,
+    ERROR_COUNT,
+    FRAMEWORK,
+    RANK,
+    TIME_INFER_S_RESCALED,
+    WINRATE,
+)
 from autogluon_dashboard.scripts.constants.plots_constants import (
     AG_RANK_COUNTS_TITLE,
     AGG_FRAMEWORKS_DOWNLOAD_TITLE,
@@ -49,22 +57,20 @@ from autogluon_dashboard.scripts.constants.plots_constants import (
     YAXIS_LABEL,
 )
 from autogluon_dashboard.scripts.constants.widgets_constants import GRAPH_TYPES, METRICS_TO_PLOT
-
-# Load Data
 from autogluon_dashboard.scripts.data import get_dataframes
 from autogluon_dashboard.scripts.widget import Widget
 
-# TODO: Remove hardcoded default csv path
+# Load Data
 dataset_file = os.environ.get("PER_DATASET_S3_PATH", PER_DATASET_DEFAULT_CSV_PATH)
 aggregated_file = os.environ.get("AGG_DATASET_S3_PATH", AGG_FRAMEWORK_DEFAULT_CSV_PATH)
 per_dataset_df, all_framework_df = get_dataframes(dataset_file, aggregated_file)
 
 # clean up framework names
-dataset_list = utils.get_sorted_names_from_col(per_dataset_df, "dataset")
+dataset_list = utils.get_sorted_names_from_col(per_dataset_df, DATASET)
 new_framework_names = utils.clean_up_framework_names(per_dataset_df)
-per_dataset_df["framework"] = new_framework_names
-all_framework_df["framework"] = new_framework_names
-frameworks_list = utils.get_sorted_names_from_col(all_framework_df, "framework")
+per_dataset_df[FRAMEWORK] = new_framework_names
+all_framework_df[FRAMEWORK] = new_framework_names
+frameworks_list = utils.get_sorted_names_from_col(all_framework_df, FRAMEWORK)
 frameworks_list.insert(0, "All Frameworks")
 
 # Make DataFrame Interactive
@@ -103,7 +109,7 @@ metrics_plot_all_datasets = MetricsPlotAll(
     METRICS_PLOT_TITLE,
     all_framework_idf,
     "hvplot",
-    x_axis="framework",
+    x_axis=FRAMEWORK,
     y_axis=yaxis_widget,
     graph_type=graph_dropdown,
     xlabel=FRAMEWORK_LABEL,
@@ -112,8 +118,8 @@ top5frameworks_all_datasets = Top5AllDatasets(
     TOP5_PERFORMERS_TITLE + " (all datasets)",
     all_framework_idf,
     "table",
-    "rank",
-    table_cols=["framework", "rank"],
+    RANK,
+    table_cols=[FRAMEWORK, RANK],
 )
 
 metrics_plot_per_datasets = MetricsPlotPerDataset(
@@ -121,7 +127,7 @@ metrics_plot_per_datasets = MetricsPlotPerDataset(
     per_dataset_idf,
     "hvplot",
     dataset_dropdown,
-    x_axis="framework",
+    x_axis=FRAMEWORK,
     y_axis=yaxis_widget2,
     graph_type=graph_dropdown2,
     xlabel=FRAMEWORK_LABEL,
@@ -131,15 +137,15 @@ top5frameworks_per_dataset = Top5PerDataset(
     TOP5_PERFORMERS_TITLE,
     per_dataset_idf,
     "table",
-    "rank",
+    RANK,
     dataset_dropdown,
-    table_cols=["framework", "rank"],
+    table_cols=[FRAMEWORK, RANK],
 )
 ag_rank_counts = AGRankCounts(
     AG_RANK_COUNTS_TITLE,
     per_dataset_df,
     "hvplot",
-    "rank",
+    RANK,
     "AutoGluon",
     xlabel=RANK_LABEL,
     label_rot=0,
@@ -148,13 +154,13 @@ framework_error = FrameworkError(
     ERROR_COUNTS_TITLE,
     all_framework_idf,
     "hvplot",
-    x_axis="framework",
-    y_axis="error_count",
+    x_axis=FRAMEWORK,
+    y_axis=ERROR_COUNT,
     xlabel=FRAMEWORK_LABEL,
 )
 
 interactive_df_dataset = InteractiveDataframe(
-    per_dataset_df.sort_values(by="rank"), frameworks_widget2, width=3000, dataset=dataset_dropdown2
+    per_dataset_df.sort_values(by=RANK), frameworks_widget2, width=3000, dataset=dataset_dropdown2
 )
 per_dataset_dfi = interactive_df_dataset.get_interactive_df().head(nrows)
 
@@ -163,15 +169,13 @@ agg_framework_dfi = interactive_df_framework.get_interactive_df().head(nrows2)
 
 framework_box = FrameworkBoxPlot(FRAMEWORK_BOX_PLOT_TITLE, per_dataset_df, y_axis=yaxis_widget3)
 
-pareto_front = ParetoFront(
-    PARETO_FRONT_PLOT, all_framework_df, "pareto", x_axis="time_infer_s_rescaled", y_axis="winrate"
-)
+pareto_front = ParetoFront(PARETO_FRONT_PLOT, all_framework_df, "pareto", x_axis=TIME_INFER_S_RESCALED, y_axis=WINRATE)
 
 
-framework_error_list = all_framework_df.sort_values(by="error_count", ascending=False)
+framework_error_list = all_framework_df.sort_values(by=ERROR_COUNT, ascending=False)
 error_tables = [
     ErroredDatasets(f"{framework} Errored Datasets", per_dataset_df, "table", framework).plot(width=225)
-    for framework in framework_error_list["framework"]
+    for framework in framework_error_list[FRAMEWORK]
 ]
 
 # Order matters here!
@@ -234,5 +238,6 @@ template = pn.template.FastListTemplate(
         pn.Column(pn.Column(widgets, output), title=EXPLORER_TITLE[1:]),
     ],
     header_background=APP_HEADER_BACKGROUND,
+    logo="https://user-images.githubusercontent.com/16392542/77208906-224aa500-6aba-11ea-96bd-e81806074030.png",
 )
 template.servable()
